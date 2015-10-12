@@ -1,5 +1,6 @@
 #include <cp3_llbb/TTAnalysis/interface/Types.h>
 #include <cp3_llbb/TTAnalysis/interface/Tools.h>
+#include <cp3_llbb/TTAnalysis/interface/GenStatusFlags.h>
 #include <cp3_llbb/TTAnalysis/interface/TTAnalyzer.h>
 #include <cp3_llbb/TTAnalysis/interface/NoZTTDileptonCategories.h>
 #include <cp3_llbb/TTAnalysis/interface/TTDileptonCategories.h>
@@ -8,6 +9,7 @@
 #include <cp3_llbb/Framework/interface/ElectronsProducer.h>
 #include <cp3_llbb/Framework/interface/JetsProducer.h>
 #include <cp3_llbb/Framework/interface/METProducer.h>
+#include <cp3_llbb/Framework/interface/GenParticlesProducer.h>
 
 // To access VectorUtil::DeltaR() more easily
 using namespace ROOT::Math;
@@ -495,7 +497,154 @@ void TTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& setup, 
     ///////////////////////////
     //       GEN INFO        //
     ///////////////////////////
+    if (event.isRealData())
+        return;
 
+    const GenParticlesProducer& gen_particles = producers.get<GenParticlesProducer>("gen_particles");
+
+    // 'Pruned' particles are from the hard process
+    // 'Packed' particles are stable particles
+
+    std::function<bool(size_t, size_t)> pruned_decays_from = [&pruned_decays_from, &gen_particles](size_t particle_index, size_t mother_index) -> bool {
+        // Iterator over all pruned particles to find if the particle `particle_index` has `mother_index` in its decay history
+        for (uint16_t index: gen_particles.pruned_mothers_index[particle_index]) {
+            if (index == mother_index) {
+                return true;
+            }
+
+            if (pruned_decays_from(index, mother_index))
+                return true;
+        }
+
+        return false;
+    };
+
+    for (size_t i = 0; i < gen_particles.pruned_pdg_id.size(); i++) {
+
+        int16_t pdg_id = gen_particles.pruned_pdg_id[i];
+        uint16_t a_pdg_id = std::abs(pdg_id);
+
+        // We only care of particles with PDG id <= 16 (16 is neutrino tau)
+        if (a_pdg_id > 16)
+            continue;
+
+        GenStatusFlags flags(gen_particles.pruned_status_flags[i]);
+
+        if (! flags.isLastCopy())
+            continue;
+
+        if (! flags.fromHardProcess())
+            continue;
+
+        if (pdg_id == 6) {
+            gen_t = i;
+            continue;
+        } else if (pdg_id == -6) {
+            gen_tbar = i;
+            continue;
+        } else if (pdg_id == 5) {
+            gen_b = i;
+            continue;
+        } else if (pdg_id == -5) {
+            gen_bbar = i;
+            continue;
+        }
+
+        if ((gen_tbar == 0) || (gen_t == 0))
+            continue;
+
+        if (gen_t != 0 && pruned_decays_from(i, gen_t)) {
+            if (a_pdg_id >= 1 && a_pdg_id <= 4) {
+                if (gen_jet1_t == 0)
+                    gen_jet1_t = i;
+                else if (gen_jet2_t == 0)
+                    gen_jet2_t = i;
+                else
+                    std::cout << "Error: more than two quarks coming from top decay" << std::endl;
+            } else if (a_pdg_id == 11 || a_pdg_id == 13 || a_pdg_id == 15) {
+                gen_lepton_t = i;
+            } else if (a_pdg_id == 12 || a_pdg_id == 14 || a_pdg_id == 16) {
+                gen_neutrino_t = i;
+            } else {
+                std::cout << "Error: unknown particle coming from top decay - #" << i << " ; PDG Id: " << pdg_id << std::endl;
+            }
+        } else if (gen_tbar != 0 && pruned_decays_from(i, gen_tbar)) {
+            if (a_pdg_id >= 1 && a_pdg_id <= 4) {
+                if (gen_jet1_tbar == 0)
+                    gen_jet1_tbar = i;
+                else if (gen_jet2_tbar == 0)
+                    gen_jet2_tbar = i;
+                else
+                    std::cout << "Error: more than two quarks coming from anti-top decay" << std::endl;
+            } else if (a_pdg_id == 11 || a_pdg_id == 13 || a_pdg_id == 15) {
+                gen_lepton_tbar = i;
+            } else if (a_pdg_id == 12 || a_pdg_id == 14 || a_pdg_id == 16) {
+                gen_neutrino_tbar = i;
+            } else {
+                std::cout << "Error: unknown particle coming from anti-top decay - #" << i << " ; PDG Id: " << pdg_id << std::endl;
+            }
+        }
+    }
+
+    if (!gen_t || !gen_tbar) {
+        gen_ttbar_decay_type = NotTT;
+        return;
+    }
+
+    if ((gen_jet1_t != 0) && (gen_jet2_t != 0) && (gen_jet1_tbar != 0) && (gen_jet2_tbar != 0)) {
+        gen_ttbar_decay_type = Hadronic;
+    } else if (
+            ((gen_lepton_t != 0) && (gen_lepton_tbar == 0)) ||
+            ((gen_lepton_t == 0) && (gen_lepton_tbar != 0))
+            ) {
+
+        uint16_t lepton_pdg_id;
+        if (gen_lepton_t != 0)
+            lepton_pdg_id = std::abs(gen_particles.pruned_pdg_id[gen_lepton_t]);
+        else
+            lepton_pdg_id = std::abs(gen_particles.pruned_pdg_id[gen_lepton_tbar]);
+
+        if (lepton_pdg_id == 11)
+            gen_ttbar_decay_type = Semileptonic_e;
+        else if (lepton_pdg_id == 13)
+            gen_ttbar_decay_type = Semileptonic_mu;
+        else
+            gen_ttbar_decay_type = Semileptonic_tau;
+    } else {
+        uint16_t lepton_t_pdg_id = std::abs(gen_particles.pruned_pdg_id[gen_lepton_t]);
+        uint16_t lepton_tbar_pdg_id = std::abs(gen_particles.pruned_pdg_id[gen_lepton_tbar]);
+
+        if (lepton_t_pdg_id == 11 && lepton_tbar_pdg_id == 11)
+            gen_ttbar_decay_type = Dileptonic_ee;
+        else if (lepton_t_pdg_id == 13 && lepton_tbar_pdg_id == 13)
+            gen_ttbar_decay_type = Dileptonic_mumu;
+        else if (lepton_t_pdg_id == 15 && lepton_tbar_pdg_id == 15)
+            gen_ttbar_decay_type = Dileptonic_tautau;
+        else if (
+                (lepton_t_pdg_id == 11 && lepton_tbar_pdg_id == 13) ||
+                (lepton_t_pdg_id == 13 && lepton_tbar_pdg_id == 11)
+                ) {
+            gen_ttbar_decay_type = Dileptonic_mue;
+        }
+        else if (
+                (lepton_t_pdg_id == 11 && lepton_tbar_pdg_id == 15) ||
+                (lepton_t_pdg_id == 15 && lepton_tbar_pdg_id == 11)
+                ) {
+            gen_ttbar_decay_type = Dileptonic_etau;
+        }
+        else if (
+                (lepton_t_pdg_id == 13 && lepton_tbar_pdg_id == 15) ||
+                (lepton_t_pdg_id == 15 && lepton_tbar_pdg_id == 13)
+                ) {
+            gen_ttbar_decay_type = Dileptonic_mutau;
+        } else {
+            std::cout << "Error: unknown dileptonic ttbar decay." << std::endl;
+            gen_ttbar_decay_type = NotTT;
+            return;
+        }
+    }
+
+    gen_ttbar_p4 = gen_particles.pruned_p4[gen_t] + gen_particles.pruned_p4[gen_tbar];
 }
 
 void TTAnalyzer::registerCategories(CategoryManager& manager, const edm::ParameterSet& config) {

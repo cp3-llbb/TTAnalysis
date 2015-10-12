@@ -131,6 +131,29 @@ class TTAnalyzer: public Framework::Analyzer {
         BRANCH(bb_noHFMET_DPhi, std::map<std::string, float>);
         BRANCH(ll_bb_noHFMET_DPhi, std::map<std::string, float>);
 
+        // Gen matching. All indexes are from the `pruned` collection
+        BRANCH(gen_t, uint8_t); // Index of the top quark
+        BRANCH(gen_tbar, uint8_t); // Index of the anti-top quark
+
+        BRANCH(gen_b, uint8_t); // Index of the b quark coming from the top decay
+        BRANCH(gen_bbar, uint8_t); // Index of the anti-b quark coming from the anti-top decay
+
+        BRANCH(gen_jet1_t, uint8_t); // Index of the first jet from the top decay chain
+        BRANCH(gen_jet2_t, uint8_t); // Index of the second jet from the top decay chain
+
+        BRANCH(gen_jet1_tbar, uint8_t); // Index of the first jet from the anti-top decay chain
+        BRANCH(gen_jet2_tbar, uint8_t); // Index of the second jet from the anti-top decay chain
+
+        BRANCH(gen_lepton_t, uint8_t); // Index of the lepton from the top decay chain
+        BRANCH(gen_neutrino_t, uint8_t); // Index of the neutrino from the top decay chain
+
+        BRANCH(gen_lepton_tbar, uint8_t); // Index of the lepton from the anti-top decay chain
+        BRANCH(gen_neutrino_tbar, uint8_t); // Index of the neutrino from the anti-top decay chain
+
+        BRANCH(gen_ttbar_decay_type, uint8_t); // Type of ttbar decay. Can take any values from TTDecayType enum
+
+        BRANCH(gen_ttbar_p4, LorentzVector); // Type of ttbar decay. Can take any values from TTDecayType enum
+
     private:
 
         const float m_electronPtCut, m_electronEtaCut;

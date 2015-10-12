@@ -14,6 +14,20 @@
 
 namespace TTAnalysis{
 
+    enum TTDecayType {
+        NotTT = 0,
+        Hadronic,
+        Semileptonic_e,
+        Semileptonic_mu,
+        Semileptonic_tau,
+        Dileptonic_mumu,
+        Dileptonic_ee,
+        Dileptonic_tautau,
+        Dileptonic_mue,
+        Dileptonic_mutau,
+        Dileptonic_etau
+    };
+
   struct BaseObject {
     BaseObject(myLorentzVector p4): p4(p4) {}
     BaseObject() {}
