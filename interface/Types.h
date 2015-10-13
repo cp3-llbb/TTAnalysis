@@ -19,11 +19,13 @@ namespace TTAnalysis{
         Hadronic,
         Semileptonic_e,
         Semileptonic_mu,
-        Semileptonic_tau,
         Dileptonic_mumu,
         Dileptonic_ee,
-        Dileptonic_tautau,
         Dileptonic_mue,
+
+        // With tau
+        Semileptonic_tau,
+        Dileptonic_tautau,
         Dileptonic_mutau,
         Dileptonic_etau
     };
@@ -72,6 +74,11 @@ namespace TTAnalysis{
       isLoose = false;
       isMedium = false;
       isTight = false;*/
+    }
+
+    int8_t pdg_id() const {
+        int8_t id = (isEl) ? 11 : 13;
+        return charge * id;
     }
   };
   

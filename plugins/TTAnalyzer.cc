@@ -545,6 +545,11 @@ void TTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& setup, 
             std::cout << ERROR << std::endl; \
     }
 
+    gen_matched_b = -1;
+    gen_matched_bbar = -1;
+    gen_matched_lepton_t = -1;
+    gen_matched_lepton_tbar = -1;
+
     for (size_t i = 0; i < gen_particles.pruned_pdg_id.size(); i++) {
 
         int16_t pdg_id = gen_particles.pruned_pdg_id[i];
@@ -663,6 +668,72 @@ void TTAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& setup, 
     gen_ttbar_p4 = gen_particles.pruned_p4[gen_t] + gen_particles.pruned_p4[gen_tbar];
     if (gen_t_beforeFSR != 0 && gen_tbar_beforeFSR != 0)
         gen_ttbar_beforeFSR_p4 = gen_particles.pruned_p4[gen_t_beforeFSR] + gen_particles.pruned_p4[gen_tbar_beforeFSR];
+
+    gen_t_tbar_deltaR = VectorUtil::DeltaR(gen_particles.pruned_p4[gen_t], gen_particles.pruned_p4[gen_tbar]);
+    gen_b_bbar_deltaR = VectorUtil::DeltaR(gen_particles.pruned_p4[gen_b], gen_particles.pruned_p4[gen_bbar]);
+
+    if (gen_ttbar_decay_type > Hadronic) {
+
+        float min_dr_lepton_t = std::numeric_limits<float>::max();
+        float min_dr_lepton_tbar = std::numeric_limits<float>::max();
+
+        size_t lepton_index = 0;
+        for (auto& lepton: leptons) {
+
+            if (gen_lepton_t != 0) {
+                float dr = VectorUtil::DeltaR(gen_particles.pruned_p4[gen_lepton_t], lepton.p4);
+                if (dr < min_dr_lepton_t &&
+                        (std::abs(lepton.pdg_id()) == std::abs(gen_particles.pruned_pdg_id[gen_lepton_t]))) {
+                    min_dr_lepton_t = dr;
+                    gen_matched_lepton_t = lepton_index;
+                }
+                gen_lepton_t_deltaR.push_back(dr);
+            }
+
+            if (gen_lepton_tbar != 0) {
+                float dr = VectorUtil::DeltaR(gen_particles.pruned_p4[gen_lepton_tbar], lepton.p4);
+                if (dr < min_dr_lepton_tbar &&
+                        (std::abs(lepton.pdg_id()) == std::abs(gen_particles.pruned_pdg_id[gen_lepton_tbar]))) {
+                    min_dr_lepton_tbar = dr;
+                    gen_matched_lepton_tbar = lepton_index;
+                }
+                gen_lepton_tbar_deltaR.push_back(dr);
+            }
+
+            lepton_index++;
+        }
+    }
+
+    const float MIN_DR_JETS = 0.8;
+    // Match b quarks to jets
+    float min_dr_b = MIN_DR_JETS;
+    float min_dr_bbar = MIN_DR_JETS;
+    size_t jet_index = 0;
+    for (auto& jet: selectedJets_tightID_DRcut) {
+        float dr = VectorUtil::DeltaR(gen_particles.pruned_p4[gen_b], jets.p4[jet]);
+        if (dr < min_dr_b) {
+            min_dr_b = dr;
+            gen_matched_b = jet_index;
+        }
+        gen_b_deltaR.push_back(dr);
+
+        dr = VectorUtil::DeltaR(gen_particles.pruned_p4[gen_bbar], jets.p4[jet]);
+        if (dr < min_dr_bbar) {
+            min_dr_bbar = dr;
+            gen_matched_bbar = jet_index;
+        }
+        gen_bbar_deltaR.push_back(dr);
+
+        jet_index++;
+    }
+
+    if (gen_b > 0 && gen_lepton_t > 0) {
+        gen_b_lepton_t_deltaR = VectorUtil::DeltaR(gen_particles.pruned_p4[gen_b], gen_particles.pruned_p4[gen_lepton_t]);
+    }
+
+    if (gen_bbar > 0 && gen_lepton_tbar > 0) {
+        gen_bbar_lepton_tbar_deltaR = VectorUtil::DeltaR(gen_particles.pruned_p4[gen_bbar], gen_particles.pruned_p4[gen_lepton_tbar]);
+    }
 }
 
 void TTAnalyzer::registerCategories(CategoryManager& manager, const edm::ParameterSet& config) {
