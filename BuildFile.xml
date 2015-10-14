@@ -9,7 +9,6 @@
 <use name="cp3_llbb/TreeWrapper"/>
 <use name="cp3_llbb/Framework"/>
 <lib name="MathMore"/>
-<use name="rootrflx"/>
 <export>
     <lib name="1"/>
 </export>
