@@ -19,7 +19,8 @@ framework.addAnalyzer('tt', cms.PSet(
             metProducer = cms.string('met'),
 
             electronPtCut = cms.untracked.double(20),
-            electronEtaCut = cms.untracked.double(2.5),
+            electronEtaCut = cms.untracked.double(2.4),
+            electronRemoveGap = cms.untracked.bool(True),
             electronVetoIDName = cms.untracked.string('cutBasedElectronID-Spring15-25ns-V1-standalone-veto'),
             electronLooseIDName = cms.untracked.string('cutBasedElectronID-Spring15-25ns-V1-standalone-loose'),
             electronMediumIDName = cms.untracked.string('cutBasedElectronID-Spring15-25ns-V1-standalone-medium'),
@@ -27,11 +28,12 @@ framework.addAnalyzer('tt', cms.PSet(
             
             muonPtCut = cms.untracked.double(20),
             muonEtaCut = cms.untracked.double(2.4),
-            muonLooseIsoCut = cms.untracked.double(.25), # Loose cut recommended for dilepton analysis
+            muonLooseIsoCut = cms.untracked.double(.25),
             muonTightIsoCut = cms.untracked.double(.15),
 
             jetPtCut = cms.untracked.double(30),
-            jetEtaCut = cms.untracked.double(2.5),
+            jetEtaCut = cms.untracked.double(2.4),
+            bJetEtaCut = cms.untracked.double(2.4),
             #jetPUID = cms.untracked.double(-9999999),
             jetDRleptonCut = cms.untracked.double(0.3),
             jetID = cms.untracked.string('loose'), # not tightLeptonVeto since DeltaR(l,j) cut should be enough
@@ -47,7 +49,7 @@ framework.addAnalyzer('tt', cms.PSet(
             MllCutSF = cms.untracked.double(20),
             MllCutDF = cms.untracked.double(20),
             MllZVetoCutLow = cms.untracked.double(76),
-            MllZVetoCutHigh = cms.untracked.double(116),
+            MllZVetoCutHigh = cms.untracked.double(106),
             HLTDoubleMuon = cms.untracked.vstring('HLT_Mu17_TrkIsoVVL_(Tk)?Mu8_TrkIsoVVL_DZ_v.*'),
             HLTDoubleEG = cms.untracked.vstring('HLT_Ele17_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v.*'),
             HLTMuonEG = cms.untracked.vstring('HLT_Mu17_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v.*', 'HLT_Mu8_TrkIsoVVL_Ele17_CaloIdL_TrackIdL_IsoVL_v.*'),

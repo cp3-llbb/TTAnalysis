@@ -55,6 +55,7 @@ void ElElCategory::register_cuts(CutManager& manager) {
           
           manager.new_cut(baseStrCategory + postFix, baseStrCategory + postFix);
           manager.new_cut(baseStrExtraDiLeptonVeto + postFix, baseStrExtraDiLeptonVeto + postFix);
+          manager.new_cut(baseStrDiLeptonTriggerBit + postFix, baseStrDiLeptonTriggerBit + postFix);
           manager.new_cut(baseStrDiLeptonTriggerMatch + postFix, baseStrDiLeptonTriggerMatch + postFix);
           manager.new_cut(baseStrMllCut + postFix, baseStrMllCut + postFix);
           manager.new_cut(baseStrMllZVetoCut + postFix, baseStrMllZVetoCut + postFix);
@@ -87,8 +88,12 @@ void ElElCategory::evaluate_cuts_post_analyzers(CutManager& manager, const Produ
             if(m_diLepton.isElEl) {
               manager.pass_cut(baseStrCategory + postFix);
 
+              // Check that one of the corresponding triggers has fired
+              if( checkHLT(hlt, HLT::DoubleEG) )
+                manager.pass_cut(baseStrDiLeptonTriggerBit + postFix);
+              
               if(m_diLepton.hlt_idxs.first >= 0 && m_diLepton.hlt_idxs.second >= 0){
-                // We have fired a trigger. Now, check that it is actually a DoubleEG trigger
+                // We have fired a trigger. Now, check that the objects are correctly matched to the same DoubleEG trigger.
                 if( checkHLT(hlt, m_diLepton.hlt_idxs.first, m_diLepton.hlt_idxs.second, HLT::DoubleEG) )
                   manager.pass_cut(baseStrDiLeptonTriggerMatch + postFix);
               }
@@ -163,6 +168,7 @@ void ElMuCategory::register_cuts(CutManager& manager) {
           
           manager.new_cut(baseStrCategory + postFix, baseStrCategory + postFix);
           manager.new_cut(baseStrExtraDiLeptonVeto + postFix, baseStrExtraDiLeptonVeto + postFix);
+          manager.new_cut(baseStrDiLeptonTriggerBit + postFix, baseStrDiLeptonTriggerBit + postFix);
           manager.new_cut(baseStrDiLeptonTriggerMatch + postFix, baseStrDiLeptonTriggerMatch + postFix);
           manager.new_cut(baseStrMllCut + postFix, baseStrMllCut + postFix);
           manager.new_cut(baseStrMllZVetoCut + postFix, baseStrMllZVetoCut + postFix);
@@ -195,6 +201,10 @@ void ElMuCategory::evaluate_cuts_post_analyzers(CutManager& manager, const Produ
             if(m_diLepton.isElMu) {
               manager.pass_cut(baseStrCategory + postFix);
 
+              // Check that one of the corresponding triggers has fired
+              if( checkHLT(hlt, HLT::MuonEG) )
+                manager.pass_cut(baseStrDiLeptonTriggerBit + postFix);
+              
               if(m_diLepton.hlt_idxs.first >= 0 && m_diLepton.hlt_idxs.second >= 0){
                 // We have fired a trigger. Now, check that it is actually a MuonEG trigger
                 if( checkHLT(hlt, m_diLepton.hlt_idxs.first, m_diLepton.hlt_idxs.second, HLT::MuonEG) )
@@ -271,6 +281,7 @@ void MuElCategory::register_cuts(CutManager& manager) {
           
           manager.new_cut(baseStrCategory + postFix, baseStrCategory + postFix);
           manager.new_cut(baseStrExtraDiLeptonVeto + postFix, baseStrExtraDiLeptonVeto + postFix);
+          manager.new_cut(baseStrDiLeptonTriggerBit + postFix, baseStrDiLeptonTriggerBit + postFix);
           manager.new_cut(baseStrDiLeptonTriggerMatch + postFix, baseStrDiLeptonTriggerMatch + postFix);
           manager.new_cut(baseStrMllCut + postFix, baseStrMllCut + postFix);
           manager.new_cut(baseStrMllZVetoCut + postFix, baseStrMllZVetoCut + postFix);
@@ -303,6 +314,10 @@ void MuElCategory::evaluate_cuts_post_analyzers(CutManager& manager, const Produ
             if(m_diLepton.isMuEl) {
               manager.pass_cut(baseStrCategory + postFix);
 
+              // Check that one of the corresponding triggers has fired
+              if( checkHLT(hlt, HLT::MuonEG) )
+                manager.pass_cut(baseStrDiLeptonTriggerBit + postFix);
+              
               if(m_diLepton.hlt_idxs.first >= 0 && m_diLepton.hlt_idxs.second >= 0){
                 // We have fired a trigger. Now, check that it is actually a MuonEG trigger
                 if( checkHLT(hlt, m_diLepton.hlt_idxs.first, m_diLepton.hlt_idxs.second, HLT::MuonEG) )
@@ -378,6 +393,7 @@ void MuMuCategory::register_cuts(CutManager& manager) {
           
           manager.new_cut(baseStrCategory + postFix, baseStrCategory + postFix);
           manager.new_cut(baseStrExtraDiLeptonVeto + postFix, baseStrExtraDiLeptonVeto + postFix);
+          manager.new_cut(baseStrDiLeptonTriggerBit + postFix, baseStrDiLeptonTriggerBit + postFix);
           manager.new_cut(baseStrDiLeptonTriggerMatch + postFix, baseStrDiLeptonTriggerMatch + postFix);
           manager.new_cut(baseStrMllCut + postFix, baseStrMllCut + postFix);
           manager.new_cut(baseStrMllZVetoCut + postFix, baseStrMllZVetoCut + postFix);
@@ -410,6 +426,10 @@ void MuMuCategory::evaluate_cuts_post_analyzers(CutManager& manager, const Produ
             if(m_diLepton.isMuMu) {
               manager.pass_cut(baseStrCategory + postFix);
 
+              // Check that one of the corresponding triggers has fired
+              if( checkHLT(hlt, HLT::DoubleMuon) )
+                manager.pass_cut(baseStrDiLeptonTriggerBit + postFix);
+              
               if(m_diLepton.hlt_idxs.first >= 0 && m_diLepton.hlt_idxs.second >= 0){
                 // We have fired a trigger. Now, check that it is actually a DoubleMuon trigger
                 if( checkHLT(hlt, m_diLepton.hlt_idxs.first, m_diLepton.hlt_idxs.second, HLT::DoubleMuon) )

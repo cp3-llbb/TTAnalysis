@@ -8,6 +8,7 @@
 #include <cp3_llbb/Framework/interface/MuonsProducer.h>
 #include <cp3_llbb/Framework/interface/JetsProducer.h>
 #include <cp3_llbb/Framework/interface/Analyzer.h>
+#include <cp3_llbb/Framework/interface/BinnedValuesJSONParser.h>
 
 #include <cp3_llbb/TTAnalysis/interface/Types.h>
 #include <cp3_llbb/TTAnalysis/interface/Tools.h>
@@ -24,7 +25,8 @@ class TTAnalyzer: public Framework::Analyzer {
             m_met_producer(config.getParameter<std::string>("metProducer")),
             
             m_electronPtCut( config.getUntrackedParameter<double>("electronPtCut", 20) ),
-            m_electronEtaCut( config.getUntrackedParameter<double>("electronEtaCut", 2.5) ),
+            m_electronEtaCut( config.getUntrackedParameter<double>("electronEtaCut", 2.4) ),
+            m_electronRemoveGap( config.getUntrackedParameter<bool>("electronRemoveGap", true) ),
             m_electronVetoIDName( config.getUntrackedParameter<std::string>("electronVetoIDName") ),
             m_electronLooseIDName( config.getUntrackedParameter<std::string>("electronLooseIDName") ),
             m_electronMediumIDName( config.getUntrackedParameter<std::string>("electronMediumIDName") ),
@@ -36,9 +38,9 @@ class TTAnalyzer: public Framework::Analyzer {
             m_muonTightIsoCut( config.getUntrackedParameter<double>("muonTightIsoCut", 0.12) ),
             
             m_jetPtCut( config.getUntrackedParameter<double>("jetPtCut", 30) ),
-            m_jetEtaCut( config.getUntrackedParameter<double>("jetEtaCut", 2.5) ),
+            m_jetEtaCut( config.getUntrackedParameter<double>("jetEtaCut", 2.4) ),
             m_bJetEtaCut( config.getUntrackedParameter<double>("bJetEtaCut", 2.4) ),
-            m_jetPUID( config.getUntrackedParameter<double>("jetPUID", std::numeric_limits<float>::min()) ),
+            m_jetPUID( config.getUntrackedParameter<double>("jetPUID", std::numeric_limits<double>::min()) ),
             m_jetDRleptonCut( config.getUntrackedParameter<double>("jetDRleptonCut", 0.3) ),
             m_jetID( config.getUntrackedParameter<std::string>("jetID", "loose") ),
             m_jetCSVv2Name( config.getUntrackedParameter<std::string>("jetCSVv2Name", "pfCombinedInclusiveSecondaryVertexV2BJetTags") ),
@@ -46,9 +48,17 @@ class TTAnalyzer: public Framework::Analyzer {
             m_jetCSVv2M( config.getUntrackedParameter<double>("jetCSVv2M", 0.89) ),
             m_jetCSVv2T( config.getUntrackedParameter<double>("jetCSVv2T", 0.97) ),
             
-            m_hltDRCut( config.getUntrackedParameter<double>("hltDRCut", std::numeric_limits<float>::max()) ),
-            m_hltDPtCut( config.getUntrackedParameter<double>("hltDPtCut", std::numeric_limits<float>::max()) )
+            m_hltDRCut( config.getUntrackedParameter<double>("hltDRCut", std::numeric_limits<double>::max()) ),
+            m_hltDPtCut( config.getUntrackedParameter<double>("hltDPtCut", std::numeric_limits<double>::max()) )
         {
+          if(config.exists("hltScaleFactors")){
+            const edm::ParameterSet& hltSFPSet = config.getUntrackedParameter<edm::ParameterSet>("hltScaleFactors");
+            std::vector<std::string> hltSFNames = hltSFPSet.getParameterNames();
+            for(const std::string& sf: hltSFNames){
+              BinnedValuesJSONParser parser(hltSFPSet.getUntrackedParameter<edm::FileInPath>(sf).fullPath());
+              m_hltSF.emplace(sf, std::move(parser.get_values()));
+            }
+          }
         }
 
         virtual void analyze(const edm::Event&, const edm::EventSetup&, const ProducersManager&, const AnalyzersManager&, const CategoryManager&) override;
@@ -64,33 +74,24 @@ class TTAnalyzer: public Framework::Analyzer {
         BRANCH(diLeptons_IDIso, std::vector<std::vector<uint16_t>>);
 
         BRANCH(selJets, std::vector<TTAnalysis::Jet>);
-        BRANCH(selJets_selID, std::vector<uint16_t>);
-        // ex.: selectedJets_..._DRCut[X][0] is the highest Pt selected jet with minDRjl>0.3 taking into account ID/Iso-X Leptons
-        BRANCH(selJets_selID_DRCut, std::vector<std::vector<uint16_t>>);
-        // ex.: selectedBJets_..._PtOrdered[X][0] is the highest Pt selected jet with minDRjl>0.3 taking into account ID/Iso/Btag-X combination
-        BRANCH(selBJets_DRCut_BWP_PtOrdered, std::vector<std::vector<uint16_t>>);
-        BRANCH(selBJets_DRCut_BWP_CSVv2Ordered, std::vector<std::vector<uint16_t>>);
+        // ex.: selJets_..._PtOrdered[X][0] is the highest Pt selected jet with minDRjl>0.3 taking into account leptonID/Iso pair & Btag-X combination
+        BRANCH(selJets_DRCut_BWP_PtOrdered, std::vector<std::vector<uint16_t>>);
+        BRANCH(selJets_DRCut_BWP_CSVv2Ordered, std::vector<std::vector<uint16_t>>);
 
         BRANCH(diJets, std::vector<TTAnalysis::DiJet>);
-        // ex.: diJets_DRCut[X][0] is first diJet with minDRjl>0.3 taking into account ID/Iso-X Leptons
-        BRANCH(diJets_DRCut, std::vector<std::vector<uint16_t>>); 
-        // ex.: diBJets_..._CSVv2Ordered[X][0] is the b-jet pair with highest CSVv2 values and with minDRjl>0.3 taking into account the leptonID/Iso/Btag-X combination
-        BRANCH(diBJets_DRCut_BWP_PtOrdered, std::vector<std::vector<uint16_t>>);
-        BRANCH(diBJets_DRCut_BWP_CSVv2Ordered, std::vector<std::vector<uint16_t>>);
+        // ex.: diJets_..._CSVv2Ordered[X][0] is the jet pair with highest CSVv2 values and with minDRjl>0.3 taking into account the leptonID/Iso pair & Btag-X combination
+        BRANCH(diJets_DRCut_BWP_PtOrdered, std::vector<std::vector<uint16_t>>);
+        BRANCH(diJets_DRCut_BWP_CSVv2Ordered, std::vector<std::vector<uint16_t>>);
 
         // For all the following: indices are combinations of LeptonID/LeptonIso/(B-tagging working point)
-
+        
         BRANCH(diLepDiJets, std::vector<TTAnalysis::DiLepDiJet>);
+        BRANCH(diLepDiJets_DRCut_BWP_PtOrdered, std::vector<std::vector<uint16_t>>); // di-leptons of combined ID/Iso with di-jets built out of jets having minDRjl>cut taking into account lepton ID/Iso corresponding to the chosen combination of the two leptons of the object
+        BRANCH(diLepDiJets_DRCut_BWP_CSVv2Ordered, std::vector<std::vector<uint16_t>>);
         
-        BRANCH(diLepDiJets_DRCut, std::vector<std::vector<uint16_t>>); // di-leptons of combined ID/Iso with di-jets built out of jets having minDRjl>cut taking into account lepton ID/Iso corresponding to the loosest combination of the two leptons of the object
-        BRANCH(diLepDiBJets_DRCut_BWP_PtOrdered, std::vector<std::vector<uint16_t>>);
-        BRANCH(diLepDiBJets_DRCut_BWP_CSVv2Ordered, std::vector<std::vector<uint16_t>>);
-
         BRANCH(diLepDiJetsMet, std::vector<TTAnalysis::DiLepDiJetMet>);
-        
-        BRANCH(diLepDiJetsMet_DRCut, std::vector<std::vector<uint16_t>>); 
-        BRANCH(diLepDiBJetsMet_DRCut_BWP_PtOrdered, std::vector<std::vector<uint16_t>>);
-        BRANCH(diLepDiBJetsMet_DRCut_BWP_CSVv2Ordered, std::vector<std::vector<uint16_t>>);
+        BRANCH(diLepDiJetsMet_DRCut_BWP_PtOrdered, std::vector<std::vector<uint16_t>>); // di-leptons of combined ID/Iso with di-jets built out of jets having minDRjl>cut taking into account lepton ID/Iso corresponding to the chosen combination of the two leptons of the object
+        BRANCH(diLepDiJetsMet_DRCut_BWP_CSVv2Ordered, std::vector<std::vector<uint16_t>>);
         
         BRANCH(ttbar, std::vector<std::vector<std::vector<TTAnalysis::TTBar>>>);
 
@@ -140,27 +141,31 @@ class TTAnalyzer: public Framework::Analyzer {
         BRANCH(gen_b_lepton_t_deltaR, float); // DeltaR between the b quark and the lepton coming from the top decay chain
         BRANCH(gen_bbar_lepton_tbar_deltaR, float); // DeltaR between the b quark and the lepton coming from the top decay chain
 
-        // These two vectors are indexed wrt LepLepId enum
-        BRANCH(gen_b_deltaR, std::vector<std::vector<float>>); // DeltaR between the gen b coming from the top decay and each selected jets. Indexed as `selectedJets_tightID_DRcut` array
-        BRANCH(gen_bbar_deltaR, std::vector<std::vector<float>>); // DeltaR between the gen bbar coming from the anti-top decay chain and each selected jets. Indexed as `selectedJets_tightID_DRcut` array
-
-        // These two vectors are indexed wrt LepLepId enum
-        BRANCH(gen_b_beforeFSR_deltaR, std::vector<std::vector<float>>); // DeltaR between the gen b coming from the top decay and each selected jets. Indexed as `selectedJets_tightID_DRcut` array
-        BRANCH(gen_bbar_beforeFSR_deltaR, std::vector<std::vector<float>>); // DeltaR between the gen bbar coming from the anti-top decay chain and each selected jets. Indexed as `selectedJets_tightID_DRcut` array
-
         BRANCH(gen_lepton_t_deltaR, std::vector<float>); // DeltaR between the gen lepton coming from the top decay chain and each selected lepton. Indexed as `leptons` array
         BRANCH(gen_lepton_tbar_deltaR, std::vector<float>); // DeltaR between the gen lepton coming from the anti-top decay chain and each selected lepton. Indexed as `leptons` array
 
-        // These two vectors are indexed wrt LepLepId enum
-        BRANCH(gen_matched_b, std::vector<int8_t>); // Index inside the `selectedJets_tightID_DRcut` collection of the jet with the smallest deltaR with the gen b coming from the top decay
-        BRANCH(gen_matched_bbar, std::vector<int8_t>); // Index inside the `selectedJets_tightID_DRcut` collection of the jet with the smallest deltaR with the gen bbar coming from the anti-top decay
-
-        // These two vectors are indexed wrt LepLepId enum
-        BRANCH(gen_matched_b_beforeFSR, std::vector<int8_t>); // Index inside the `selectedJets_tightID_DRcut` collection of the jet with the smallest deltaR with the gen b coming from the top decay
-        BRANCH(gen_matched_bbar_beforeFSR, std::vector<int8_t>); // Index inside the `selectedJets_tightID_DRcut` collection of the jet with the smallest deltaR with the gen bbar coming from the anti-top decay
+        BRANCH(gen_lepton_beforeFSR_t_deltaR, std::vector<float>); // DeltaR between the gen lepton coming from the top decay chain and each selected lepton. Indexed as `leptons` array
+        BRANCH(gen_lepton_beforeFSR_tbar_deltaR, std::vector<float>); // DeltaR between the gen lepton coming from the anti-top decay chain and each selected lepton. Indexed as `leptons` array
 
         BRANCH(gen_matched_lepton_t, int16_t); // Index inside the `leptons` collection of the lepton with the smallest deltaR with the gen lepton coming from the top decay chain
         BRANCH(gen_matched_lepton_tbar, int16_t); // Index inside the `leptons` collection of the lepton with the smallest deltaR with the gen lepton coming from the anti-top decay chain
+
+        BRANCH(gen_matched_lepton_beforeFSR_t, int16_t); // Index inside the `leptons` collection of the lepton with the smallest deltaR with the gen lepton coming from the top decay chain
+        BRANCH(gen_matched_lepton_beforeFSR_tbar, int16_t); // Index inside the `leptons` collection of the lepton with the smallest deltaR with the gen lepton coming from the anti-top decay chain
+
+        // The following vectors are indexed wrt. LepLepIdJetJetBWP enum (as, for instance, selJets_DRCut_BWP_PtOrdered), giving indices pointing to the `selJets` collection
+        BRANCH(gen_b_deltaR, std::vector<std::vector<float>>); // DeltaR between the gen b coming from the top decay and each selected jets.
+        BRANCH(gen_bbar_deltaR, std::vector<std::vector<float>>); // DeltaR between the gen bbar coming from the anti-top decay chain and each selected jets.
+
+        BRANCH(gen_b_beforeFSR_deltaR, std::vector<std::vector<float>>); // DeltaR between the gen b coming from the top decay and each selected jets.
+        BRANCH(gen_bbar_beforeFSR_deltaR, std::vector<std::vector<float>>); // DeltaR between the gen bbar coming from the anti-top decay chain and each selected jets.
+
+        // The following vectors are indexed wrt. LepLepIdJetJetBWP enum (as, for instance, selJets_DRCut_BWP_PtOrdered)
+        BRANCH(gen_matched_b, std::vector<int8_t>); // Index inside the `selJets` collection of the jet with the smallest deltaR with the gen b coming from the top decay
+        BRANCH(gen_matched_bbar, std::vector<int8_t>); // Index inside the `selJets` collection of the jet with the smallest deltaR with the gen bbar coming from the anti-top decay
+
+        BRANCH(gen_matched_b_beforeFSR, std::vector<int8_t>); // Index inside the `selJets` collection of the jet with the smallest deltaR with the gen b coming from the top decay
+        BRANCH(gen_matched_bbar_beforeFSR, std::vector<int8_t>); // Index inside the `selJets` collection of the jet with the smallest deltaR with the gen bbar coming from the anti-top decay
 
     private:
 
@@ -171,6 +176,7 @@ class TTAnalyzer: public Framework::Analyzer {
         const std::string m_met_producer;
 
         const float m_electronPtCut, m_electronEtaCut;
+        const bool m_electronRemoveGap;
         const std::string m_electronVetoIDName;
         const std::string m_electronLooseIDName;
         const std::string m_electronMediumIDName;
@@ -183,6 +189,7 @@ class TTAnalyzer: public Framework::Analyzer {
         const float m_jetCSVv2L, m_jetCSVv2M, m_jetCSVv2T;
 
         const float m_hltDRCut, m_hltDPtCut;
+        std::map<std::string, BinnedValues> m_hltSF;
 
         std::shared_ptr<NeutrinosSolver> m_neutrinos_solver;
 

@@ -6,25 +6,23 @@ std::vector<std::pair<NeutrinosSolver::LorentzVector, NeutrinosSolver::LorentzVe
         const LorentzVector& lepton2_p4, 
         const LorentzVector& bjet1_p4, 
         const LorentzVector& bjet2_p4,
-        const LorentzVector& met) {
+        const LorentzVector& met,
+        const double wplus_mass, const double wminus_mass,
+        const double t_mass, const double tbar_mass) {
 
-
-    // pT = transverse total momentum of the visible particles
-    // It will be used to reconstruct neutrinos, but we want to take into account the measured ISR (pt_isr = - pt_met - pt_vis),
-    // so we add pt_isr to pt_vis in order to have pt_vis + pt_nu + pt_isr = 0 as it should be.
 
     const LorentzVector& p3 = lepton1_p4;
     const LorentzVector& p4 = bjet1_p4;
     const LorentzVector& p5 = lepton2_p4;
     const LorentzVector& p6 = bjet2_p4;
 
-    double s13 = w_mass * w_mass;
+    double s13 = wplus_mass * wplus_mass;
     double s134 = t_mass * t_mass;
-    double s25 = w_mass * w_mass;
-    double s256 = t_mass * t_mass;
+    double s25 = wminus_mass * wminus_mass;
+    double s256 = tbar_mass * tbar_mass;
 
-    LorentzVector ISR = -(lepton1_p4 + lepton2_p4 + bjet1_p4 + bjet2_p4 + met);
-    LorentzVector pT = lepton1_p4 + lepton2_p4 + bjet1_p4 + bjet2_p4 + ISR;
+    // Fix the MET to the measured one
+    LorentzVector pT = -met;
 
     const double p34 = p3.Dot(p4);
     const double p56 = p5.Dot(p6);

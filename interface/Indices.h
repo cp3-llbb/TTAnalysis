@@ -46,35 +46,39 @@ namespace TTAnalysis {
   }
 
   // Combination of Jet IDs for two jets (NOTE: NOT USED FOR NOW)
-  uint16_t JetJetID(const JetID::JetID& id1, const JetID::JetID& id2);
-  std::string JetJetIDStr(const JetID::JetID& id1, const JetID::JetID& id2);
+  //uint16_t JetJetID(const JetID::JetID& id1, const JetID::JetID& id2);
+  //std::string JetJetIDStr(const JetID::JetID& id1, const JetID::JetID& id2);
   
   // B-tagging working points
   namespace BWP {
-    enum BWP{ L, M, T, Count };
-    const std::array<BWP, Count> it = {{ L, M, T }};
-    const std::map<BWP, std::string> map = { {L, "L"}, {M, "M"}, {T, "T"} };
+    enum BWP{ A, L, M, Count };
+    const std::array<BWP, Count> it = {{ A, L, M }};
+    const std::map<BWP, std::string> map = { {A, "A"}, {L, "L"}, {M, "M"} };
   }
 
   // Combination of Jet ID and B-tagging working point (NOTE: NOT USED FOR NOW)
-  uint16_t JetIDBWP(const JetID::JetID& id, const BWP::BWP& wp);
-  std::string JetIDBWPStr(const JetID::JetID& id, const BWP::BWP& wp);
+  //uint16_t JetIDBWP(const JetID::JetID& id, const BWP::BWP& wp);
+  //std::string JetIDBWPStr(const JetID::JetID& id, const BWP::BWP& wp);
   
-  // Combination of Lepton ID + Lepton Isolation (one lepton) and B-tagging working point for one jet
-  uint16_t LepIDIsoJetBWP(const LepID::LepID& id, const LepIso::LepIso& iso, const BWP::BWP& wp);
-  std::string LepIDIsoJetBWPStr(const LepID::LepID& id, const LepIso::LepIso& iso, const BWP::BWP& wp);
+  // Combination of Lepton ID + Lepton Isolation (on lepton) and B-tagging working point for one jet (NOTE: NOT USED FOR NOW)
+  //uint16_t LepIDIsoJetBWP(const LepID::LepID& id, const LepIso::LepIso& iso, const BWP::BWP& wp);
+  //std::string LepIDIsoJetBWPStr(const LepID::LepID& id, const LepIso::LepIso& iso, const BWP::BWP& wp);
+
+  // Combination of Lepton ID + Lepton Isolation (two leptons) and B-tagging working point for one jet
+  uint16_t LepLepIDIsoJetBWP(const LepID::LepID& id1, const LepIso::LepIso& iso1, const LepID::LepID& id2, const LepIso::LepIso& iso2, const BWP::BWP& wp);
+  std::string LepLepIDIsoJetBWPStr(const LepID::LepID& id1, const LepIso::LepIso& iso1, const LepID::LepID& id2, const LepIso::LepIso& iso2, const BWP::BWP& wp);
 
   // Combination of B-tagging working points for two jets
   uint16_t JetJetBWP(const BWP::BWP& wp1, const BWP::BWP& wp2);
   std::string JetJetBWPStr(const BWP::BWP& wp1, const BWP::BWP& wp2);
 
   // Combination of Jet ID and B-tagging working points for two jets (NOTE: NOT USED FOR NOW)
-  uint16_t JetJetIDBWP(const JetID::JetID& id1, const BWP::BWP& wp1, const JetID::JetID& id2, const BWP::BWP& wp2);
-  std::string JetJetIDBWPStr(const JetID::JetID& id1, const BWP::BWP wp1, const JetID::JetID& id2, const BWP::BWP wp2);
+  //uint16_t JetJetIDBWP(const JetID::JetID& id1, const BWP::BWP& wp1, const JetID::JetID& id2, const BWP::BWP& wp2);
+  //std::string JetJetIDBWPStr(const JetID::JetID& id1, const BWP::BWP wp1, const JetID::JetID& id2, const BWP::BWP wp2);
   
-  // Combination of Lepton ID + Lepton Isolation (one lepton) and B-tagging working points for two jets
-  uint16_t LepIDIsoJetJetBWP(const LepID::LepID& id, const LepIso::LepIso& iso, const BWP::BWP& wp1, const BWP::BWP& wp2);
-  std::string LepIDIsoJetJetBWPStr(const LepID::LepID& id, const LepIso::LepIso& iso, const BWP::BWP& wp1, const BWP::BWP& wp2);
+  // Combination of Lepton ID + Lepton Isolation (one lepton) and B-tagging working points for two jets (NOTE: NOT USED FOR NOW)
+  //uint16_t LepIDIsoJetJetBWP(const LepID::LepID& id, const LepIso::LepIso& iso, const BWP::BWP& wp1, const BWP::BWP& wp2);
+  //std::string LepIDIsoJetJetBWPStr(const LepID::LepID& id, const LepIso::LepIso& iso, const BWP::BWP& wp1, const BWP::BWP& wp2);
   
   // Combination of Lepton ID, Lepton Isolation, and B-tagging working points for a two-lepton-two-b-jets object
   uint16_t LepLepIDIsoJetJetBWP(const LepID::LepID& id1, const LepIso::LepIso& iso1, const LepID::LepID& id2, const LepIso::LepIso& iso2, const BWP::BWP& wp1, const BWP::BWP& wp2);

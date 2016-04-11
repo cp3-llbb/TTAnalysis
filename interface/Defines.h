@@ -2,10 +2,10 @@
 
 // Debugging macros
 
-// #define _TT_DEBUG_
-#define TT_MTT_DEBUG (false)
-#define TT_HLT_DEBUG (false)
-#define TT_GEN_DEBUG (false)
+//#define _TT_DEBUG_
+//#define TT_MTT_DEBUG
+//#define TT_HLT_DEBUG
+//#define TT_GEN_DEBUG
 
 
 #if TT_GEN_DEBUG

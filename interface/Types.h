@@ -89,7 +89,8 @@ namespace TTAnalysis {
   struct DiLepton: BaseObject {
     DiLepton():
       ID(LepID::Count*LepID::Count, false),
-      iso(LepIso::Count*LepIso::Count, false)
+      iso(LepIso::Count*LepIso::Count, false),
+      hlt_SF({1,1,1})
       {}
     
     std::pair<uint16_t, uint16_t> idxs; // stores indices to electron/muon arrays
@@ -100,6 +101,7 @@ namespace TTAnalysis {
     bool isSF; // same flavour
     std::vector<bool> ID; // combination of two lepton IDs
     std::vector<bool> iso; // combination of two lepton isolations
+    std::vector<float> hlt_SF; // scale factors for the corresponding trigger -> nominal/down/up
     float DR;
     float DEta;
     float DPhi;
@@ -108,26 +110,26 @@ namespace TTAnalysis {
   struct Jet: BaseObject {
     Jet():
       ID(JetID::Count, false),
-      minDRjl_lepIDIso(LepID::Count*LepIso::Count, std::numeric_limits<float>::max()),
+      minDRjl_lepLepIDIso(LepID::Count*LepIso::Count*LepID::Count*LepIso::Count, std::numeric_limits<float>::max()),
       BWP(BWP::Count, false)
       {}
 
     uint16_t idx; // index to jet array
     std::vector<bool> ID;
-    std::vector<float> minDRjl_lepIDIso; // defined for each combination of a lepton ID and isolation
+    std::vector<float> minDRjl_lepLepIDIso; // defined for each combination of two leptons' ID and isolation
     float CSVv2;
     std::vector<bool> BWP;
   };
   
   struct DiJet: BaseObject {
     DiJet():
-      minDRjl_lepIDIso(LepID::Count*LepIso::Count, std::numeric_limits<float>::max()),
+      minDRjl_lepLepIDIso(LepID::Count*LepIso::Count*LepID::Count*LepIso::Count, std::numeric_limits<float>::max()),
       BWP(BWP::Count*BWP::Count, false)
       {}
     
     std::pair<uint16_t, uint16_t> idxs; // stores indices to jets array
     std::pair<uint16_t, uint16_t> jidxs; // stores indices to TTAnalysis::Jet array
-    std::vector<float> minDRjl_lepIDIso; // defined for each combination of a lepton ID and isolation
+    std::vector<float> minDRjl_lepLepIDIso; // defined for each combination of two leptons' ID and isolation
     std::vector<bool> BWP; // combination of two b-tagging working points
     float DR;
     float DEta;
@@ -141,10 +143,8 @@ namespace TTAnalysis {
       {}
     DiLepDiJet(const DiLepton& _diLepton, const int diLepIdx, const DiJet& _diJet, const int diJetIdx):
       BaseObject(_diLepton.p4 + _diJet.p4),
-      diLepton(&_diLepton),
-      diLepIdx(diLepIdx),
-      diJet(&_diJet),
-      diJetIdx(diJetIdx),
+      diLepton(&_diLepton), diLepIdx(diLepIdx), lidxs(_diLepton.lidxs), fwk_lidxs(_diLepton.idxs),
+      diJet(&_diJet), diJetIdx(diJetIdx), jidxs(_diJet.jidxs), fwk_jidxs(_diJet.idxs),
       DR_ll_jj( ROOT::Math::VectorUtil::DeltaR(_diLepton.p4, _diJet.p4) ),
       DEta_ll_jj( DeltaEta(_diLepton.p4, _diJet.p4) ),
       DPhi_ll_jj( ROOT::Math::VectorUtil::DeltaPhi(_diLepton.p4, _diJet.p4) )
@@ -152,8 +152,12 @@ namespace TTAnalysis {
 
     const DiLepton* diLepton;
     uint16_t diLepIdx;
+    std::pair<uint16_t, uint16_t> lidxs;
+    std::pair<uint16_t, uint16_t> fwk_lidxs;
     const DiJet* diJet;
     uint16_t diJetIdx;
+    std::pair<uint16_t, uint16_t> jidxs;
+    std::pair<uint16_t, uint16_t> fwk_jidxs;
 
     float DR_ll_jj, DEta_ll_jj, DPhi_ll_jj;
     
@@ -164,10 +168,9 @@ namespace TTAnalysis {
 
   struct DiLepDiJetMet: DiLepDiJet {
     DiLepDiJetMet() {}
-    DiLepDiJetMet(const DiLepDiJet& diLepDiJet, uint16_t diLepDiJetIdx, const myLorentzVector& MetP4, bool hasNoHFMet = false):
+    DiLepDiJetMet(const DiLepDiJet& diLepDiJet, uint16_t diLepDiJetIdx, const myLorentzVector& MetP4):
       DiLepDiJet(*diLepDiJet.diLepton, diLepDiJet.diLepIdx, *diLepDiJet.diJet, diLepDiJet.diJetIdx),
-      diLepDiJetIdx(diLepDiJetIdx),
-      hasNoHFMet(hasNoHFMet)
+      diLepDiJetIdx(diLepDiJetIdx)
     {
       DiLepDiJet::minDRjl = diLepDiJet.minDRjl;
       DiLepDiJet::maxDRjl = diLepDiJet.maxDRjl;
@@ -193,7 +196,6 @@ namespace TTAnalysis {
     }
 
     uint16_t diLepDiJetIdx;
-    bool hasNoHFMet;
 
     float DR_ll_Met, DR_jj_Met;
     float DEta_ll_Met, DEta_jj_Met;

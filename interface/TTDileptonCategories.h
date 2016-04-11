@@ -14,8 +14,8 @@ class DileptonCategory: public Category {
     virtual void configure(const edm::ParameterSet& conf) override {
       m_MllCutSF = conf.getUntrackedParameter<double>("MllCutSF", 20);
       m_MllCutDF = conf.getUntrackedParameter<double>("MllCutDF", 20);
-      m_MllZVetoCutLow = conf.getUntrackedParameter<double>("MllZVetoCutLow", 86);
-      m_MllZVetoCutHigh = conf.getUntrackedParameter<double>("MllZVetoCutHigh", 116);
+      m_MllZVetoCutLow = conf.getUntrackedParameter<double>("MllZVetoCutLow", 76);
+      m_MllZVetoCutHigh = conf.getUntrackedParameter<double>("MllZVetoCutHigh", 106);
       m_HLTDoubleMuon = conf.getUntrackedParameter<std::vector<std::string>>("HLTDoubleMuon");
       m_HLTDoubleEG = conf.getUntrackedParameter<std::vector<std::string>>("HLTDoubleEG");
       m_HLTMuonEG = conf.getUntrackedParameter<std::vector<std::string>>("HLTMuonEG");
@@ -31,6 +31,7 @@ class DileptonCategory: public Category {
     DileptonCategory():
       baseStrCategory("Category"),
       baseStrExtraDiLeptonVeto("ExtraDiLeptonVeto"),
+      baseStrDiLeptonTriggerBit("DiLeptonTriggerBit"),
       baseStrDiLeptonTriggerMatch("DiLeptonTriggerMatch"),
       baseStrMllCut("Mll"),
       baseStrMllZVetoCut("MllZVeto"),
@@ -46,6 +47,7 @@ class DileptonCategory: public Category {
 
     std::string baseStrCategory;
     std::string baseStrExtraDiLeptonVeto;
+    std::string baseStrDiLeptonTriggerBit;
     std::string baseStrDiLeptonTriggerMatch;
     std::string baseStrMllCut;
     std::string baseStrMllZVetoCut;
@@ -56,30 +58,39 @@ class DileptonCategory: public Category {
     std::vector<boost::regex> m_HLTMuonEGRegex;
 
     enum class HLT { DoubleMuon, DoubleEG, MuonEG };
+    const std::vector<boost::regex>* getPathGroup(HLT pathGroup) const {
+      switch(pathGroup){
+        case HLT::DoubleMuon:
+          return &m_HLTDoubleMuonRegex;
+
+        case HLT::DoubleEG:
+          return &m_HLTDoubleEGRegex;
+
+        case HLT::MuonEG:
+          return &m_HLTMuonEGRegex;
+      }
+      return nullptr;
+    };
+    
+    // Simply check that a trigger specified in pathGroup has fired
+    bool checkHLT(const HLTProducer& hlt, HLT pathGroup) const {
+      const std::vector<boost::regex>* chosenPathGroup = getPathGroup(pathGroup);
+      
+      for(const auto& checkPath: *chosenPathGroup){
+        for(const auto& firedPath: hlt.paths){
+          if( boost::regex_match(firedPath, checkPath) )
+              return true;
+        }
+      }
+      
+      return false;
+    }
 
     // Check that the hlt objects at indices hltIdx1, hltIdx2 have fired at least one and the same 
     // of the trigger paths in the group specified by pathGroup.
     bool checkHLT(const HLTProducer& hlt, uint16_t hltIdx1, uint16_t hltIdx2, HLT pathGroup) const {
-      const std::vector<boost::regex>* chosenPathGroup(nullptr);
-
-      switch(pathGroup){
-        
-        case HLT::DoubleMuon:
-          chosenPathGroup = &m_HLTDoubleMuonRegex;
-          break;
-
-        case HLT::DoubleEG:
-          chosenPathGroup = &m_HLTDoubleEGRegex;
-          break;
-
-        case HLT::MuonEG:
-          chosenPathGroup = &m_HLTMuonEGRegex;
-          break;
-
-        default:
-          break;
       
-      }
+      const std::vector<boost::regex>* chosenPathGroup = getPathGroup(pathGroup);
 
       if( !chosenPathGroup || hltIdx1 >= hlt.object_paths.size() || hltIdx2 >= hlt.object_paths.size() )
         return false;

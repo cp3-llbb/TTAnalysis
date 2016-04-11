@@ -24,8 +24,7 @@ class NeutrinosSolver {
     public:
         using LorentzVector = ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double>>;
 
-        NeutrinosSolver(float top_mass, float w_mass):
-            t_mass(top_mass), w_mass(w_mass) {
+        NeutrinosSolver(){
             // Empty
         }
 
@@ -33,9 +32,7 @@ class NeutrinosSolver {
                 const LorentzVector& lepton2_p4, 
                 const LorentzVector& bjet1_p4, 
                 const LorentzVector& bjet2_p4,
-                const LorentzVector& met);
-
-    private:
-        float t_mass = 172.5;
-        float w_mass = 80.4;
+                const LorentzVector& met,
+                const double wplus_mass=80.4, const double wminus_mass=80.4,
+                const double t_mass=172.5, const double tbar_mass=172.5);
 };
