@@ -1090,7 +1090,7 @@ after_hlt_matching:
         }
     }
 
-    if (!gen_t || !gen_tbar) {
+    if ((gen_tbar == -1) || (gen_t == -1)) {
 #if TT_GEN_DEBUG
         std::cout << "This is not a ttbar event" << std::endl;
 #endif
